@@ -7,7 +7,7 @@ const port = process.env.PORT || 8080;
 
 app.use(bodyParser.json());
   
-app.use('/',require('./routes/contacts')); // Use the routes
+app.use('/',require('./routes')); // Use the routes
 mongodb.initDb((err) => {
     if(err) {
         console.log(err);
