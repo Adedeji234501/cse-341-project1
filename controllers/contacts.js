@@ -3,6 +3,7 @@ const { ObjectId } = require('mongodb');
 
 
 const getAllContacts = async (req, res) => {
+    //#swagger.tags=['Users']
     try {
         const result = await mongodb.getDatabase().db(process.env.DB_NAME).collection('contacts').find();
         result.toArray().then((list) => {
@@ -15,6 +16,7 @@ const getAllContacts = async (req, res) => {
     }
 };
 const getContactById = async (req, res) => {
+    //#swagger.tags=['Users']
     const contactsId = new ObjectId(req.params.id);
     try {
         const result = await mongodb.getDatabase().db(process.env.DB_NAME).collection('contacts').find({_id: contactsId });
@@ -27,8 +29,70 @@ const getContactById = async (req, res) => {
         res.status(500).json({error: err.message });
     }
 };
+const postUser = async (req, res) => {
+    //#swagger.tags=['Users']
+    const { firstName, lastName, email, favoriteColor, birthday } = req.body;
+    const user = {
+        firstName,
+        lastName,
+        email,
+        favoriteColor,
+        birthday
+    };
+
+    if (!firstName || !lastName || !email || !favoriteColor || !birthday) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    try {
+        const result = await mongodb.getDatabase().db(process.env.DB_NAME).collection('contacts').insertOne(user);
+        res.status(201).json({ id: result.insertedId });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to add contact' });
+    }
+};
+
+const putUser = async (req, res) => {
+    //#swagger.tags=['Users']
+    const userId = new ObjectId(req.params.id);
+    console.log(`Updating user with ID: ${userId}`, req.body); // Log incoming request data
+    const { firstName, lastName, email, favoriteColor, birthday } = req.body;
+    const user = {
+        firstName,
+        lastName,
+        email,
+        favoriteColor,
+        birthday
+    };
+    const response = await mongodb.getDatabase().db(process.env.DB_NAME).collection('contacts').replaceOne({ _id: userId }, user);
+    if (response.modifiedCount > 0) {
+        res.status(200).json({ message: 'Contact updated successfully' });
+    } else {
+        console.error(`Failed to update user with ID: ${userId}`, response.error); // Log error
+        res.status(500).json(response.error || 'User not updated');
+    }
+};
+
+const deleteUser = async (req, res) => {
+    //#swagger.tags=['Users']
+    const userId = new ObjectId(req.params.id);
+    try {
+        const result = await mongodb.getDatabase().db().collection('contacts').deleteOne({ _id: new ObjectId(userId) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: 'Contact not found' });
+        }
+
+        res.status(204).json({ message: 'Contact deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete contact' });
+    }
+};
 
 module.exports = {
     getAllContacts,
     getContactById,
+    postUser,
+    putUser,
+    deleteUser
 };
